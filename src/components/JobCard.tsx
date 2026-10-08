@@ -8,6 +8,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  X,
 } from 'lucide-react';
 import { JobApplication, STATUS_COLORS } from '../types';
 import { useState } from 'react';
@@ -16,6 +17,27 @@ interface JobCardProps {
   job: JobApplication;
   onEdit: (job: JobApplication) => void;
   onDelete: (id: string) => void;
+}
+
+const TAG_COLORS = [
+  'bg-blue-100 text-blue-700 border-blue-200',
+  'bg-purple-100 text-purple-700 border-purple-200',
+  'bg-green-100 text-green-700 border-green-200',
+  'bg-amber-100 text-amber-700 border-amber-200',
+  'bg-pink-100 text-pink-700 border-pink-200',
+  'bg-indigo-100 text-indigo-700 border-indigo-200',
+  'bg-teal-100 text-teal-700 border-teal-200',
+  'bg-orange-100 text-orange-700 border-orange-200',
+  'bg-cyan-100 text-cyan-700 border-cyan-200',
+  'bg-rose-100 text-rose-700 border-rose-200',
+];
+
+function getTagColor(tag: string): string {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
 }
 
 export default function JobCard({ job, onEdit, onDelete }: JobCardProps) {
@@ -38,6 +60,8 @@ export default function JobCard({ job, onEdit, onDelete }: JobCardProps) {
     'Remoto': '🏠',
   };
 
+  const jobTags = job.tags || [];
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
       {/* Card Header */}
@@ -58,6 +82,20 @@ export default function JobCard({ job, onEdit, onDelete }: JobCardProps) {
             {job.status}
           </span>
         </div>
+
+        {/* Tags */}
+        {jobTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {jobTags.map((tag) => (
+              <span
+                key={tag}
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTagColor(tag)}`}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Meta info */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-sm text-gray-500">
