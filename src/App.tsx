@@ -5,6 +5,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import JobForm from './components/JobForm';
 import JobCard from './components/JobCard';
 import FilterBar from './components/FilterBar';
+import TagFilter from './components/TagFilter';
 import ImportExport from './components/ImportExport';
 import StatsBar from './components/StatsBar';
 
@@ -15,9 +16,19 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
   const [activeFilter, setActiveFilter] = useState<JobStatus | 'Todos'>('Todos');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // Get all unique tags from jobs
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    jobs.forEach((job) => {
+      (job.tags || []).forEach((tag) => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  }, [jobs]);
 
   // Filter and sort jobs
   const filteredJobs = useMemo(() => {
@@ -28,6 +39,14 @@ export default function App() {
       result = result.filter((job) => job.status === activeFilter);
     }
 
+    // Filter by tags (OR logic - show jobs that have ANY of the selected tags)
+    if (selectedTags.length > 0) {
+      result = result.filter((job) => {
+        const jobTags = job.tags || [];
+        return selectedTags.some((tag) => jobTags.includes(tag));
+      });
+    }
+
     // Filter by search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -35,7 +54,8 @@ export default function App() {
         (job) =>
           job.company.toLowerCase().includes(query) ||
           job.title.toLowerCase().includes(query) ||
-          job.notes.toLowerCase().includes(query)
+          job.notes.toLowerCase().includes(query) ||
+          (job.tags || []).some((tag) => tag.toLowerCase().includes(query))
       );
     }
 
@@ -56,7 +76,7 @@ export default function App() {
     }
 
     return result;
-  }, [jobs, activeFilter, searchQuery, sortBy]);
+  }, [jobs, activeFilter, selectedTags, searchQuery, sortBy]);
 
   // Counts for filter bar
   const counts = useMemo(() => {
@@ -98,6 +118,16 @@ export default function App() {
 
   const handleImport = (importedJobs: JobApplication[]) => {
     setJobs(importedJobs);
+  };
+
+  const handleToggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleClearTags = () => {
+    setSelectedTags([]);
   };
 
   return (
@@ -145,7 +175,7 @@ export default function App() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por empresa, puesto o notas..."
+              placeholder="Buscar por empresa, puesto, notas o etiquetas..."
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-sm text-gray-900 placeholder:text-gray-400"
             />
           </div>
@@ -181,9 +211,19 @@ export default function App() {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Status Filters */}
         {jobs.length > 0 && (
           <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} counts={counts} />
+        )}
+
+        {/* Tag Filters */}
+        {allTags.length > 0 && (
+          <TagFilter
+            allTags={allTags}
+            selectedTags={selectedTags}
+            onToggleTag={handleToggleTag}
+            onClearAll={handleClearTags}
+          />
         )}
 
         {/* Job Cards */}
@@ -230,6 +270,7 @@ export default function App() {
             <button
               onClick={() => {
                 setActiveFilter('Todos');
+                setSelectedTags([]);
                 setSearchQuery('');
               }}
               className="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium"

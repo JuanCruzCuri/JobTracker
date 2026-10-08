@@ -10,6 +10,7 @@ import {
   Save,
   X,
   Briefcase,
+  Plus,
 } from 'lucide-react';
 import {
   JobApplication,
@@ -39,10 +40,33 @@ const emptyForm = {
   currency: 'USD' as Currency,
   notes: '',
   applicationDate: new Date().toISOString().split('T')[0],
+  tags: [] as string[],
 };
+
+const TAG_COLORS = [
+  'bg-blue-100 text-blue-700 border-blue-200',
+  'bg-purple-100 text-purple-700 border-purple-200',
+  'bg-green-100 text-green-700 border-green-200',
+  'bg-amber-100 text-amber-700 border-amber-200',
+  'bg-pink-100 text-pink-700 border-pink-200',
+  'bg-indigo-100 text-indigo-700 border-indigo-200',
+  'bg-teal-100 text-teal-700 border-teal-200',
+  'bg-orange-100 text-orange-700 border-orange-200',
+  'bg-cyan-100 text-cyan-700 border-cyan-200',
+  'bg-rose-100 text-rose-700 border-rose-200',
+];
+
+function getTagColor(tag: string): string {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+}
 
 export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
   const [form, setForm] = useState(emptyForm);
+  const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
     if (job) {
@@ -56,6 +80,7 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
         currency: job.currency,
         notes: job.notes,
         applicationDate: job.applicationDate,
+        tags: job.tags || [],
       });
     } else {
       setForm(emptyForm);
@@ -76,6 +101,32 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const newTag = tagInput.trim();
+      if (newTag && !form.tags.includes(newTag)) {
+        setForm((prev) => ({ ...prev, tags: [...prev.tags, newTag] }));
+        setTagInput('');
+      }
+    }
+  };
+
+  const handleAddTagClick = () => {
+    const newTag = tagInput.trim();
+    if (newTag && !form.tags.includes(newTag)) {
+      setForm((prev) => ({ ...prev, tags: [...prev.tags, newTag] }));
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setForm((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tagToRemove),
+    }));
   };
 
   return (
@@ -194,6 +245,51 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
+              <Tag className="w-4 h-4 text-gray-400" />
+              Etiquetas / Rubro
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleAddTag}
+                placeholder="Escribí y presioná Enter (ej: FP&A, Private Equity...)"
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-gray-900 placeholder:text-gray-400"
+              />
+              <button
+                type="button"
+                onClick={handleAddTagClick}
+                className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                Agregar
+              </button>
+            </div>
+            {form.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {form.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getTagColor(tag)}`}
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="ml-1 hover:opacity-70 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Salary */}

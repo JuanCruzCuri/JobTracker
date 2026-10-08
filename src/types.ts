@@ -21,6 +21,7 @@ export interface JobApplication {
   currency: Currency;
   notes: string;
   applicationDate: string;
+  tags: string[];
   createdAt: string;
   updatedAt: string;
 }

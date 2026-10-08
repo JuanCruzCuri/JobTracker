@@ -5,6 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   base: '/JobTracker/',
   plugins: [react(), tailwindcss()],
+  base: '/JobTracker/',
   server: {
     host: "0.0.0.0",
     port: 3000,
